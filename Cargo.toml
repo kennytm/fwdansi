@@ -10,6 +10,7 @@ license = "MIT"
 
 [badges]
 travis-ci = { repository = "kennyt/fwdansi" }
+appveyor = { repository = "kennyt/fwdansi" }
 maintenance = { status = "passively-maintained" }
 
 [dependencies]
