@@ -1,6 +1,6 @@
 environment:
   matrix:
-    - TOOLCHAIN: 1.27.2
+    - TOOLCHAIN: 1.32.0
     - TOOLCHAIN: stable
     - TOOLCHAIN: beta
     - TOOLCHAIN: nightly
