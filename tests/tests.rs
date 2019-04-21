@@ -1,4 +1,3 @@
-#[macro_use]
 extern crate proptest;
 extern crate fwdansi;
 extern crate termcolor;
