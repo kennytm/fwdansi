@@ -1,10 +1,10 @@
-extern crate termcolor;
 extern crate fwdansi;
+extern crate termcolor;
 
-use termcolor::*;
+use fwdansi::write_ansi;
 use std::io;
 use std::process::Command;
-use fwdansi::write_ansi;
+use termcolor::*;
 
 fn main() -> io::Result<()> {
     let output = Command::new("rustc").args(&["--color", "always"]).output()?;

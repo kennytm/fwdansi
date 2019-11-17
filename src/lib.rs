@@ -29,14 +29,13 @@
 //! }
 //! ```
 
-extern crate termcolor;
 extern crate memchr;
+extern crate termcolor;
 
 use memchr::memchr;
 use termcolor::{Color, ColorSpec, WriteColor};
 
 use std::io;
-use std::mem;
 
 /// Writes a string with ANSI escape code into the colored output stream.
 ///
@@ -55,7 +54,11 @@ pub fn write_ansi<W: WriteColor>(mut writer: W, mut ansi: &[u8]) -> io::Result<(
             writer.write_all(&right[..1])?;
             ansi = &right[1..];
         } else {
-            writer.set_color(&parser.spec)?;
+            if parser.reset {
+                writer.reset()?;
+            } else {
+                writer.set_color(&parser.spec)?;
+            }
             ansi = parser.ansi;
         }
     }
@@ -69,6 +72,7 @@ enum State {
     Ansi256,
     Rgb,
 }
+#[derive(Debug)]
 struct ColorSpecParser<'a> {
     spec: ColorSpec,
     ansi: &'a [u8],
@@ -92,7 +96,7 @@ impl<'a> ColorSpecParser<'a> {
     }
 
     fn parse(&mut self) {
-        #[derive(PartialEq, Eq)]
+        #[derive(PartialEq, Eq, Debug)]
         enum Expected {
             Escape,
             OpenBracket,
@@ -121,14 +125,13 @@ impl<'a> ColorSpecParser<'a> {
                     (b':', Expected::Number(number))
                     | (b';', Expected::Number(number))
                     | (b'm', Expected::Number(number)) => {
-                        if self.apply_number(number) {
-                            if *b == b'm' {
-                                expected = Expected::Escape;
-                                break;
-                            } else {
-                                expected = Expected::Number(0);
-                                continue;
-                            }
+                        self.apply_number(number);
+                        if *b == b'm' {
+                            expected = Expected::Escape;
+                            break;
+                        } else {
+                            expected = Expected::Number(0);
+                            continue;
                         }
                     }
                     _ => {}
@@ -151,12 +154,11 @@ impl<'a> ColorSpecParser<'a> {
         }
     }
 
-    fn apply_number(&mut self, number: u8) -> bool {
+    fn apply_number(&mut self, number: u8) {
+        self.reset = false;
         match (number, self.state) {
             (0, State::Normal) => {
-                if mem::replace(&mut self.reset, true) {
-                    return false;
-                }
+                self.reset = true;
             }
             (1, State::Normal) => {
                 self.spec.set_bold(true);
@@ -198,25 +200,22 @@ impl<'a> ColorSpecParser<'a> {
                 self.set_color(Color::Ansi256(n));
                 self.state = State::Normal;
             }
-            (b, State::Rgb) => {
-                match (self.red, self.green) {
-                    (None, _) => {
-                        self.red = Some(b);
-                    }
-                    (Some(_), None) => {
-                        self.green = Some(b);
-                    }
-                    (Some(r), Some(g)) => {
-                        self.set_color(Color::Rgb(r, g, b));
-                        self.state = State::Normal;
-                    }
+            (b, State::Rgb) => match (self.red, self.green) {
+                (None, _) => {
+                    self.red = Some(b);
                 }
-            }
+                (Some(_), None) => {
+                    self.green = Some(b);
+                }
+                (Some(r), Some(g)) => {
+                    self.set_color(Color::Rgb(r, g, b));
+                    self.state = State::Normal;
+                }
+            },
             _ => {
                 self.state = State::Normal;
             }
         }
-        true
     }
 }
 

@@ -1,6 +1,6 @@
 [package]
 name = "fwdansi"
-version = "1.0.1"
+version = "1.1.0"
 authors = ["kennytm <kennytm@gmail.com>"]
 description = "Forwards a byte string with ANSI escape code to a termcolor terminal"
 repository = "https://github.com/kennytm/fwdansi"

@@ -1,5 +1,5 @@
-extern crate proptest;
 extern crate fwdansi;
+extern crate proptest;
 extern crate termcolor;
 
 use fwdansi::write_ansi;
@@ -76,19 +76,18 @@ impl Element {
         prop_oneof![
             Just(Element::Reset),
             any_color_spec().prop_map(Element::ColorSpec),
-            any::<Vec<u8>>()
-                .prop_filter_map(
-                    "ignored empty SGR",
-                    |v| if v.windows(3).find(|w| w == b"\x1b[m").is_some() {
-                        None
-                    } else {
-                        Some(Element::Text(v))
-                    }
-                ),
+            any::<Vec<u8>>().prop_filter_map("ignored empty SGR", |v| {
+                if v.windows(3).find(|w| w == b"\x1b[m").is_some() {
+                    None
+                } else {
+                    Some(Element::Text(v))
+                }
+            }),
         ]
     }
 
     fn write<W: WriteColor>(&self, mut w: W) -> io::Result<()> {
+        w.write_all(b"~")?;
         match self {
             Element::ColorSpec(cs) => w.set_color(cs),
             Element::Reset => w.reset(),
